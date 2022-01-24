@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+
+import os,sys
+import matplotlib.pyplot as plt
+import numpy as np
+
+# get the current path
+path = os.popen('pwd').read().replace("\n","")
+
+# add the asked path
+try :
+    path += "/" +sys.argv[1]
+except:
+    pass
+
+# correct the path
+correct_path = path.replace(" ","\ ")
+
+# run 'du' command on the correct path
+mycmd = os.popen('du -h --max-depth=1 '+correct_path).read()
+
+# read the result of 'du' command
+data = []
+dic = {}
+S = 0
+for i in mycmd.split('\n')[:-1]:
+    a = i.split('\t')
+
+    if a[1] != path:
+        s = a[0].replace(",",".")
+        if s[-1] == 'G' :
+            size = float(s[:-1])*1000000
+        elif s[-1] == 'M' :
+            size = float(s[:-1])*1000
+        else :
+            size = float(s[:-1])
+        name = a[1].replace(path,"")
+
+        S += size
+
+        dic[name] = size
+
+
+for cle in dic :
+    dic[cle] /= S
+
+
+newdic = {}
+
+autre_sum = 0
+for key in dic :
+    if dic[key] < 0.015:
+        autre_sum += dic[key]
+    else :
+        newdic[key] = dic[key]
+
+newdic['Autre'] = autre_sum
+
+
+for cle in newdic :
+    print("{} : {:.2F} %".format(cle.replace("/",""),newdic[cle]*100))
+
+labels = newdic.keys()
+sizes = newdic.values()
+
+explode = [0.01 for _ in range(len(newdic))]
+
+fig, ax = plt.subplots()
+
+ax.axis('equal')
+plt.tight_layout()
+
+
+ax.pie(sizes,explode=explode,autopct='%1.1f%%',labels=labels,pctdistance=0.85,rotatelabels=1)
+plt.title(path)
+
+
+#draw circle
+centre_circle = plt.Circle((0,0),0.70,fc='white')
+fig.gca().add_artist(centre_circle)# Equal aspect ratio ensures that pie is drawn as a circle
+
+
+plt.show()
